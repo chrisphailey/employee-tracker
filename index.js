@@ -1,8 +1,11 @@
 const inquirer = require('inquirer');
 const fs = require('fs');
+const connection = require('./db/connection')
 const tableArray = [];
-const departmentArray = [];
-const role = [];
+let departments
+let departmentsArr = [];
+let employeeArray = [];
+
 
 const addDepartment = () => {
     return inquirer
@@ -12,13 +15,129 @@ const addDepartment = () => {
         name: 'department',
         message: 'What is the name of the department?',
     },
+])
+.then(answer => {
+    console.log(answer.department);
+    connection.query(`INSERT INTO departments (name)
+                        VALUES ('${answer.department}')`, (err, results)=> {
+                            console.log(results);
+                            if(err){
+                                console.log(err)
+                            }
+                        })
     promptUser()
+})
+}
+
+
+const addRole = () => {
+    connection.query('SELECT * FROM departments', (err, response) => {
+        departments = response
+        departments.map(({id, name}) => {
+            departmentsArr.push({name: name, value: id})
+        // console.log(departmentsArr)
+        }
+    );
+    return inquirer
+    .prompt([
+        {
+            type: 'input',
+            name: 'title',
+            message: 'What is the name of the role?',
+        },
+        {
+            type: 'number',
+            name: 'salary',
+            message: 'What is the salary of the role?',
+            validate: salaryInput => {
+                if (salaryInput) {
+                  return true;
+                } else {
+                  console.log("Please enter the role's salary!");
+                  return false;
+                }
+              },
+        },
+        {
+            type: 'list',
+            name: 'roleDepartment',
+            message: 'What department does the role belong to?',
+            choices: departmentsArr,
+        },
+    ])
+    .then(roleData => {
+        console.log(roleData)
+            connection.query(`INSERT INTO roles (title, salary, department_id)
+                                VALUES ('${roleData.title}', ${roleData.salary}, ${roleData.roleDepartment})`, (err, results) => {
+                                    if(err){
+                                        console.log(err)
+                                    }
+                                })
+                promptUser()
+    })
+})
+}
+const addEmployee = (tableArray) => {
+    let rolesArr = []
+    connection.query('SELECT * FROM roles', (err, response) => {
+        roles = response
+        roles.map(({id, title}) => {
+            rolesArr.push({name: title, value: id})
+        console.log(rolesArr)
+        }
+    );
+    connection.query('SELECT * FROM employees', (err, response) => {
+        response.map(({id, name}) => {
+            employeeArray.push({name: name, value: id})
+        })
+    })
+    
+    return inquirer
+    .prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: "What is the employee's first and last name?",
+        },
+        {
+            type: 'list',
+            name: 'employeeRole',
+            message: "What is the employee's role?",
+            choices: rolesArr
+        },
+        {
+            type: 'list',
+            name: 'manager',
+            message: `Who is this employee's manager?`,
+            choices: employeeArray
+        }
+    ])
+    .then(employeeData => {
+        connection.query(`INSERT INTO employees (name, role_id, manager_id)
+                            VALUES('${employeeData.name}', ${employeeData.employeeRole}, ${employeeData.manager} )`, )
+        promptUser()
+    })
+})
+}
+
+const updateUser = (employeeInfo) => {
+    return inquirer
+    .prompt([
+        {
+            type: 'list',
+            name: 'employeeSelection',
+            message: 'Which employee would you like to update?',
+            choices: employeeArray
+        }
     ])
 }
 
 
-
 const promptUser = () => {
+    // connection.query('SELECT * FROM departments', (err, response) => {
+    //     departments = response
+    // console.log(departments)
+    // });
     return inquirer
     .prompt([
                 {
@@ -40,6 +159,7 @@ const promptUser = () => {
                 addEmployee();
                 break;
             case 'Update an employee role':
+                updateUser();
                 break;
             case 'View all departments':
                 break;
@@ -145,62 +265,12 @@ const promptUser = () => {
 //     .then
 // }
 
-const addRole = () => {
-    return inquirer
-    .prompt([
-        {
-            type: 'list',
-            name: 'role',
-            message: 'What is the name of the role?',
-            choices: ['Customer Service', 'Human Resources', 'Wealth Manager', 'Accountant','Sales Rep', 'Outside Sales', 'Mechanic', 'Software Engineer'],
-        },
-        {
-            type: 'number',
-            name: 'salary',
-            message: 'What is the salary of the role?',
-            validate: salaryInput => {
-                if (salaryInput) {
-                  return true;
-                } else {
-                  console.log("Please enter the role's salary!");
-                  return false;
-                }
-              },
-        },
-        {
-            type: 'list',
-            name: 'roleDepartment',
-            message: 'What department does the role belong to?',
-            choices: ['Service', 'Finance', 'Sales', 'Engineering'],
-        },
-    ])
-}
-const addEmployee = (tableArray) => {
-    return inquirer
-    .prompt([
-        {
-            type: 'input',
-            name: 'firstName',
-            message: "What is the employee's name?",
-        },
-        {
-            type: 'input',
-            name: 'lastName',
-            message: "What is the employee's last name?",
-        },
-        {
-            type: 'list',
-            name: 'employeeRole',
-            message: "What is the employee's role?",
-        }
-    ])
 //     .then(Data => {
 //         if({decision} === 'Add a department'){
 //             departmentArray.push(Data)
 //             console.log(departmentArray)
 //         }
 //     })
-}
 
 
 
