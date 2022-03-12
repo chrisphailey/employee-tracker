@@ -68,7 +68,9 @@ const addRole = () => {
     .then(roleData => {
         console.log(roleData)
             connection.query(`INSERT INTO roles (title, salary, department_id)
-                                VALUES ('${roleData.title}', ${roleData.salary}, ${roleData.roleDepartment})`, (err, results) => {
+                                VALUES ('${roleData.title}', ${roleData.salary}, ${roleData.roleDepartment})
+                                LEFT JOIN departments
+                                ON roles.department_id = departments.name`, (err, results) => {
                                     if(err){
                                         console.log(err)
                                     }
@@ -83,7 +85,6 @@ const addEmployee = (tableArray) => {
         roles = response
         roles.map(({id, title}) => {
             rolesArr.push({name: title, value: id})
-        console.log(rolesArr)
         }
     );
     connection.query('SELECT * FROM employees', (err, response) => {
@@ -120,16 +121,56 @@ const addEmployee = (tableArray) => {
 })
 }
 
-const updateUser = (employeeInfo) => {
+const updateUser = () => {
+    connection.query('SELECT * FROM employees', (err, response) => {
+        response.map((employee) => {
+            employeeArray.push(employee)
+        })
+    })
     return inquirer
     .prompt([
         {
             type: 'list',
             name: 'employeeSelection',
-            message: 'Which employee would you like to update?',
+            message: `Which employee's role would you like to update?`,
             choices: employeeArray
         }
     ])
+}
+
+const viewDepartments = () => {
+    connection.query('SELECT * FROM departments', (err, results) => {
+        console.table(results)
+        if(err){
+            console.log(err)
+        }
+    })
+    promptUser();
+}
+
+const viewRoles = () => {
+    const sql = `SELECT roles.id, roles.title, roles.salary, departments.name AS Department 
+                FROM roles LEFT JOIN departments ON roles.department_id=departments.id`
+    connection.query(sql, (err, results) => {
+        console.table(results)
+        if(err){
+            console.log(err)
+        }
+    })
+    promptUser();
+}
+
+const viewEmployees = () => {
+    const sql = `SELECT employees.name, roles.title, employees.manager_id AS Manager 
+                FROM employees 
+                LEFT JOIN roles
+                ON employees.employeeRole = roles.name`
+    connection.query(sql, (err, results) => {
+        console.table(results)
+        if(err){
+            console.log(err)
+        }
+    })
 }
 
 
@@ -162,10 +203,14 @@ const promptUser = () => {
                 updateUser();
                 break;
             case 'View all departments':
+                viewDepartments();
                 break;
             case 'View all employees':
+                viewEmployees();
+                promptUser();
                 break;
             case 'View all roles':
+                viewRoles();
                 break;
         }
     })
