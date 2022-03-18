@@ -1,14 +1,14 @@
 const db = require('./db/connection');
-// const express = require('express');
+const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
-const routes = require('./routes');
+// const routes = require('./routes');
 
 // express middleware
 app.use(express.urlencoded({ extended:false }));
 app.use(express.json());
 
-app.use('/api', routes);
+// app.use('/api', routes);
 
 // default response for any other request (NOT FOUND)
 app.use((req, res) => {
